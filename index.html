@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoSwapBot Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: url('https://source.unsplash.com/random');
+            background-size: cover;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+        }
+        .chat-container {
+            width: 60%;
+            margin-right: 20px;
+            padding-right: 20px;
+            border-right: 1px solid rgba(0, 0, 0, 0.2);
+        }
+        .chart-container {
+            width: 40%;
+            height: 500px;
+        }
+        .chart {
+            max-width: 100%;
+            border-radius: 10px;
+        }
+        .chat-box {
+            height: 300px;
+            overflow-y: scroll;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+        }
+        .user-message, .bot-message {
+            padding: 8px 12px;
+            border-radius: 20px;
+            margin-bottom: 8px;
+            display: inline-block;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background-color: #007bff;
+            color: #fff;
+            float: right;
+        }
+        .bot-message {
+            background-color: #17a2b8;
+            color: #fff;
+            float: left;
+        }
+        .chat-input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: none;
+            border-top: 1px solid rgba(0, 0, 0, 0.2);
+            outline: none;
+            font-size: 14px;
+            border-radius: 0;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+        }
+        .send-btn {
+            width: calc(100% - 20px);
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border-radius: 0 0 10px 10px;
+            display: block;
+            margin: 0 auto;
+            margin-top: 10px;
+        }
+        .send-btn:hover {
+            background-color: #0056b3;
+        }
+        .commands-container {
+            width: 35%;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            color: #333;
+        }
+        .commands-container h3 {
+            margin-top: 0;
+        }
+        .command-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+        .command-list li {
+            margin-bottom: 5px;
+            font-style: italic;
+        }
+        .transaction-history {
+            margin-top: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .transaction-history h3 {
+            margin-bottom: 10px;
+        }
+        .transaction-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .transaction-list li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chat-container">
+            <div class="chat-box" id="chatBox">
+                <div class="bot-message">Welcome to <span style="font-weight: bold;">CryptoSwapBot Using PowerLoom</span> Chat! How can I assist you?</div>
+            </div>
+            <input type="text" id="userInput" class="chat-input" placeholder="Type your message here...">
+            <button onclick="sendMessage()" class="send-btn">Send</button>
+        </div>
+        <div class="commands-container">
+            <h3>Available Commands</h3>
+            <ul class="command-list">
+                <li>/swap &lt;amount&gt; &lt;fromCrypto&gt; &lt;toCrypto&gt;</li>
+                <li>/list</li>
+                <li>/volume</li>
+            </ul>
+            <div class="transaction-history">
+                <h3>Transaction History</h3>
+                <ul class="transaction-list" id="transactionList">
+                    <!-- Transaction history will be dynamically populated here -->
+                </ul>
+            </div>
+        </div>
+        <div class="chart-container">
+            <canvas id="priceChart" class="chart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Transaction history array to store past transactions
+        var transactionHistory = [];
+
+        function sendMessage() {
+            var userInput = document.getElementById("userInput").value;
+            if (userInput.trim() === "") return;
+            var chatBox = document.getElementById("chatBox");
+            var userMessage = document.createElement("div");
+            userMessage.classList.add("user-message");
+            userMessage.textContent = userInput;
+            chatBox.appendChild(userMessage);
+            document.getElementById("userInput").value = "";
+            handleUserInput(userInput);
+        }
+
+        function handleUserInput(userInput) {
+            var chatBox = document.getElementById("chatBox");
+            var botMessage = document.createElement("div");
+            botMessage.classList.add("bot-message");
+
+            if (userInput.startsWith("/swap")) {
+                var tokens = userInput.split(" ");
+                if (tokens.length === 4) {
+                    var amount = parseFloat(tokens[1]);
+                    var fromCrypto = tokens[2].toUpperCase();
+                    var toCrypto = tokens[3].toUpperCase();
+                    if (!isNaN(amount) && fromCrypto && toCrypto) {
+                        var volumeBTC = 19867208.781346105;
+                        var volumeETH = volumeBTC * 3452 / 56234;
+                        var result = amount * volumeETH / volumeBTC;
+                        var fee = result * 0.05; // 5% fee
+                        var finalResult = result - fee; // Deducting fee
+                        botMessage.innerHTML = `Swapped <span style="font-style: italic;">${amount.toFixed(2)} ${fromCrypto}</span> to <span style="font-style: italic;">${finalResult.toFixed(2)} ${toCrypto}</span>. Fee: ${fee.toFixed(2)} ${toCrypto}`;
+                        // Add transaction to history
+                        transactionHistory.push({
+                            from: fromCrypto,
+                            to: toCrypto,
+                            amount: amount.toFixed(2),
+                            result: finalResult.toFixed(2),
+                            fee: fee.toFixed(2),
+                            date: new Date().toLocaleString()
+                        });
+                        // Update transaction history display
+                        updateTransactionHistory();
+                    } else {
+                        botMessage.textContent = "Invalid command format. Please use: /swap <amount> <fromCrypto> <toCrypto>";
+                    }
+                } else {
+                    botMessage.textContent = "Invalid command format. Please use: /swap <amount> <fromCrypto> <toCrypto>";
+                }
+            } else if (userInput.startsWith("/list")) {
+                var availableCryptos = ["BTC", "ETH", "USDT", "DOGE"];
+                botMessage.innerHTML = `Available cryptocurrencies: <span style="font-style: italic;">${availableCryptos.join(", ")}</span>`;
+            } else if (userInput.startsWith("/volume")) {
+                var volumeBTC24hr = 19867208.781346105;
+                var volumeBTC7days = 148349880.3058498;
+                botMessage.innerHTML = `24-hour volume of Bitcoin (BTC): <span style="font-style: italic;">${volumeBTC24hr.toFixed(2)}</span><br>7-day volume of Bitcoin (BTC): <span style="font-style: italic;">${volumeBTC7days.toFixed(2)}</span>`;
+            } else {
+                botMessage.textContent = "Sorry, I'm just a demo. I can't handle your request right now.";
+            }
+            chatBox.appendChild(botMessage);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function updateTransactionHistory() {
+            var transactionList = document.getElementById("transactionList");
+            // Clear existing transaction history
+            transactionList.innerHTML = "";
+            // Populate transaction history
+            transactionHistory.forEach(function(transaction) {
+                var transactionItem = document.createElement("li");
+                transactionItem.textContent = `${transaction.date}: Swapped ${transaction.amount} ${transaction.from} to ${transaction.result} ${transaction.to}. Fee: ${transaction.fee} ${transaction.to}`;
+                transactionList.appendChild(transactionItem);
+            });
+        }
+
+        var ctx = document.getElementById('priceChart').getContext('2d');
+        var priceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                datasets: [{
+                    label: 'BTC Price',
+                    data: [28454, 32453, 38566, 42901, 48127, 55233, 62021],
+                    backgroundColor: 'rgba(0, 123, 255, 0.2)',
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'ETH Price',
+                    data: [2600, 2750, 3000, 3200, 3300, 3350, 3400],
+                    backgroundColor: 'rgba(255, 165, 0, 0.2)',
+                    borderColor: 'rgba(255, 165, 0, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: false
+                        }
+                    }]
+                }
+            }
+        });
+    </script>
+</body>
+</html>
